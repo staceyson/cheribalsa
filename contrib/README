@@ -1,0 +1,11 @@
+Balsa 2.4.14 sources with emaste's changes goes into this directory:
+
+% git clone https://github.com/staceyson/balsa.git
+
+or
+
+% fetch https://pawsa.fedorapeople.org/balsa/balsa-2.4.14.tar.bz2
+% tar xvzf balsa-2.4.14.tar.bz2
+% mv balsa-2.4.14 balsa
+% cd balsa
+% patch -p1 < ../balsa-2.4.14.patch

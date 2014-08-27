@@ -1,0 +1,461 @@
+commit b2ab3941d1d161107e2fd0159486cf1286c0a3dd
+Author: Stacey Son <sson@freebsd.org>
+Date:   Thu Jul 31 00:37:11 2014 +0000
+
+    Ed's Patch
+
+diff --git a/configure.in b/configure.in
+index d188dbe..028b56a 100644
+--- a/configure.in
++++ b/configure.in
+@@ -869,7 +869,7 @@ dnl #####################################################################
+ AC_C_CONST
+ AC_STDC_HEADERS
+ 
+-AC_DEFINE([_XOPEN_SOURCE],[500],[We strive for XOPEN compliance])
++AC_DEFINE([_XOPEN_SOURCE],[600],[We strive for XOPEN compliance])
+ AC_CHECK_DECLS([localtime_r, gmtime_r, ctime_r], [], [], [[#include <time.h>]])
+ AC_CHECK_FUNCS([localtime_r gmtime_r ctime_r])
+ AC_CHECK_HEADER([zlib.h],,AC_MSG_ERROR([zlib library required]))
+diff --git a/libbalsa/folder-scanners.c b/libbalsa/folder-scanners.c
+index 09a3adf..58ebec9 100644
+--- a/libbalsa/folder-scanners.c
++++ b/libbalsa/folder-scanners.c
+@@ -22,6 +22,7 @@
+ #endif                          /* HAVE_CONFIG_H */
+ #include "folder-scanners.h"
+ 
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/libbalsa/imap/auth-cram.c b/libbalsa/imap/auth-cram.c
+index 459d99d..de79be2 100644
+--- a/libbalsa/imap/auth-cram.c
++++ b/libbalsa/imap/auth-cram.c
+@@ -114,7 +114,7 @@ imap_auth_cram(ImapMboxHandle* handle)
+    */
+   
+   lit_conv_to_base64(ibuf, obuf, strlen (obuf), sizeof(ibuf)-2);
+-  strncat (ibuf, "\r\n", sizeof (ibuf));
++  strncat (ibuf, "\r\n", sizeof (*ibuf));
+   imap_handle_write(handle, ibuf, strlen(ibuf));
+   imap_handle_flush(handle);
+   g_free(user); g_free(pass); /* FIXME: clean passwd first */
+diff --git a/libbalsa/imap/auth-gssapi.c b/libbalsa/imap/auth-gssapi.c
+index 5a19707..2a45e5f 100644
+--- a/libbalsa/imap/auth-gssapi.c
++++ b/libbalsa/imap/auth-gssapi.c
+@@ -20,7 +20,7 @@
+ 
+ #include "config.h"
+ 
+-#define _XOPEN_SOURCE 500
++#define _XOPEN_SOURCE 600
+ #include <stdio.h>
+ #include <string.h>
+ 
+diff --git a/libbalsa/imap/imap-commands.c b/libbalsa/imap/imap-commands.c
+index 10c8886..61c281d 100644
+--- a/libbalsa/imap/imap-commands.c
++++ b/libbalsa/imap/imap-commands.c
+@@ -14,7 +14,7 @@
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, see <http://www.gnu.org/licenses/>.
+  */
+-#define _XOPEN_SOURCE 500
++#define _XOPEN_SOURCE 600
+ #include <ctype.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -138,7 +138,7 @@ imap_mbox_handle_can_do(ImapMboxHandle* handle, ImapCapability cap)
+   if(!handle->has_capabilities)
+     imap_check_capability(handle);
+ 
+-  if(cap>=0 && cap<IMCAP_MAX)
++  if(cap<IMCAP_MAX)
+     return handle->capabilities[cap];
+   else return 0;
+ }
+diff --git a/libbalsa/imap/imap-handle.c b/libbalsa/imap/imap-handle.c
+index 4890d43..1b37fcb 100644
+--- a/libbalsa/imap/imap-handle.c
++++ b/libbalsa/imap/imap-handle.c
+@@ -17,7 +17,7 @@
+ #include "config.h"
+ 
+ #define _POSIX_C_SOURCE 199506L
+-#define _XOPEN_SOURCE 500
++#define _XOPEN_SOURCE 600
+ #define _BSD_SOURCE     1
+ 
+ #include <sys/types.h>
+@@ -3253,7 +3253,8 @@ imap_get_address(struct siobuf* sio)
+   
+   for(i=0; i<4; i++) {
+     addr[i] = imap_get_nstring(sio);
+-    if( (c=sio_getc(sio)) != ' '); /* error if i < 3 but do nothing */
++    if( (c=sio_getc(sio)) != ' ')
++      ; /* error if i < 3 but do nothing */
+   }
+ 
+   if (addr[0] && (p = strchr(addr[0], '\r'))) {
+diff --git a/libbalsa/imap/imap_compress.c b/libbalsa/imap/imap_compress.c
+index 65716e6..005ed06 100644
+--- a/libbalsa/imap/imap_compress.c
++++ b/libbalsa/imap/imap_compress.c
+@@ -150,7 +150,7 @@ imap_compress(ImapMboxHandle *handle)
+ void
+ imap_compress_init(struct ImapCompressContext *buf)
+ {
+-  memset(buf, 0, sizeof(buf));
++  memset(buf, 0, sizeof(*buf));
+ }
+ 
+ /** releases any data that might have been allocated by compression routines. */
+diff --git a/libbalsa/imap/imap_search.c b/libbalsa/imap/imap_search.c
+index dede620..a5a8ded 100644
+--- a/libbalsa/imap/imap_search.c
++++ b/libbalsa/imap/imap_search.c
+@@ -16,7 +16,7 @@
+  */
+ 
+ #define _POSIX_C_SOURCE 199506L
+-#define _XOPEN_SOURCE 500
++#define _XOPEN_SOURCE 600
+ 
+ #include <string.h>
+ #include <glib.h>
+diff --git a/libbalsa/imap/imap_tst.c b/libbalsa/imap/imap_tst.c
+index ad3be4c..093ae69 100644
+--- a/libbalsa/imap/imap_tst.c
++++ b/libbalsa/imap/imap_tst.c
+@@ -645,8 +645,6 @@ process_options(int argc, char *argv[])
+ 
+ int
+ main(int argc, char *argv[]) {
+-  g_type_init();
+-
+   if(argc<=1) {
+     test_envelope_strings();
+     test_body_strings();
+diff --git a/libbalsa/libbalsa.c b/libbalsa/libbalsa.c
+index 26f6f19..97414d8 100644
+--- a/libbalsa/libbalsa.c
++++ b/libbalsa/libbalsa.c
+@@ -93,9 +93,11 @@ libbalsa_init(LibBalsaInformationFunc information_callback)
+ #endif
+ 
+ #ifdef BALSA_USE_THREADS
++#if 0 /* XXX g_thread_supported deprecated */
+     if (!g_thread_supported()) {
+ 	g_error("Threads have not been initialised.");
+     }
++#endif
+     main_thread_id = pthread_self();
+ #endif
+ 
+diff --git a/libbalsa/mailbox_imap.c b/libbalsa/mailbox_imap.c
+index daee24d..f04f845 100644
+--- a/libbalsa/mailbox_imap.c
++++ b/libbalsa/mailbox_imap.c
+@@ -3153,7 +3153,7 @@ libbalsa_mailbox_imap_can_do(LibBalsaMailbox* mbox,
+ static ImapSortKey
+ lbmi_get_imap_sort_key(LibBalsaMailbox *mbox)
+ {
+-    ImapSortKey key = LB_MBOX_FROM_COL;
++    ImapSortKey key = IMSO_FROM;
+ 
+     switch (mbox->view->sort_field) {
+     default:
+diff --git a/libbalsa/mailbox_local.c b/libbalsa/mailbox_local.c
+index 31eb73a..8589c93 100644
+--- a/libbalsa/mailbox_local.c
++++ b/libbalsa/mailbox_local.c
+@@ -435,7 +435,7 @@ libbalsa_mailbox_local_load_config(LibBalsaMailbox * mailbox,
+ 
+ typedef struct {
+     GArray * array;
+-    guint (*fileno)(LibBalsaMailboxLocal * local, guint msgno);
++    guint (*filenum)(LibBalsaMailboxLocal * local, guint msgno);
+     LibBalsaMailboxLocal *local;
+ } LibBalsaMailboxLocalSaveTreeInfo;
+ 
+@@ -459,9 +459,9 @@ lbm_local_save_tree_item(guint msgno, guint a,
+     if (msgno == 0) {
+         info.msgno = msgno;
+         info.value.total = a;
+-    } else if (save_info->fileno) {
+-        info.msgno = save_info->fileno(save_info->local, msgno);
+-        info.value.parent = save_info->fileno(save_info->local, a);
++    } else if (save_info->filenum) {
++        info.msgno = save_info->filenum(save_info->local, msgno);
++        info.value.parent = save_info->filenum(save_info->local, a);
+     } else {
+         info.msgno = msgno;
+         info.value.parent = a;
+@@ -519,7 +519,7 @@ lbm_local_save_tree(LibBalsaMailboxLocal * local)
+         return;
+     }
+ 
+-    save_info.fileno = LIBBALSA_MAILBOX_LOCAL_GET_CLASS(local)->fileno;
++    save_info.filenum = LIBBALSA_MAILBOX_LOCAL_GET_CLASS(local)->filenum;
+     save_info.local = local;
+     save_info.array =
+         g_array_new(FALSE, FALSE, sizeof(LibBalsaMailboxLocalTreeInfo));
+diff --git a/libbalsa/mailbox_local.h b/libbalsa/mailbox_local.h
+index 64acf5d..4c48d34 100644
+--- a/libbalsa/mailbox_local.h
++++ b/libbalsa/mailbox_local.h
+@@ -79,7 +79,7 @@ struct _LibBalsaMailboxLocalClass {
+     gint (*check_files)(const gchar * path, gboolean create);
+     void (*set_path)(LibBalsaMailboxLocal * local, const gchar * path);
+     void (*remove_files)(LibBalsaMailboxLocal * local);
+-    guint (*fileno)(LibBalsaMailboxLocal * local, guint msgno);
++    guint (*filenum)(LibBalsaMailboxLocal * local, guint msgno);
+     LibBalsaMailboxLocalMessageInfo *(*get_info)(LibBalsaMailboxLocal * local,
+                                                  guint msgno);
+ };
+diff --git a/libbalsa/mailbox_maildir.c b/libbalsa/mailbox_maildir.c
+index 3515093..099977b 100644
+--- a/libbalsa/mailbox_maildir.c
++++ b/libbalsa/mailbox_maildir.c
+@@ -47,7 +47,7 @@ struct message_info {
+     /* The message's order when parsing; needed for saving the message
+      * tree in a form that will match the msgnos when the mailbox is
+      * reopened. */
+-    guint fileno;
++    guint filenum;
+ };
+ #define REAL_FLAGS(flags) ((flags) & LIBBALSA_MESSAGE_FLAGS_REAL)
+ #define FLAGS_REALLY_DIFFER(orig_flags, flags) \
+@@ -97,7 +97,7 @@ static gint lbm_maildir_check_files(const gchar * path, gboolean create);
+ static void lbm_maildir_set_path(LibBalsaMailboxLocal * local,
+                                  const gchar * path);
+ static void lbm_maildir_remove_files(LibBalsaMailboxLocal * local);
+-static guint lbm_maildir_fileno(LibBalsaMailboxLocal * local, guint msgno);
++static guint lbm_maildir_filenum(LibBalsaMailboxLocal * local, guint msgno);
+ static LibBalsaMailboxLocalMessageInfo
+     *lbm_maildir_get_info(LibBalsaMailboxLocal * local, guint msgno);
+ 
+@@ -173,7 +173,7 @@ libbalsa_mailbox_maildir_class_init(LibBalsaMailboxMaildirClass * klass)
+     libbalsa_mailbox_local_class->check_files  = lbm_maildir_check_files;
+     libbalsa_mailbox_local_class->set_path     = lbm_maildir_set_path;
+     libbalsa_mailbox_local_class->remove_files = lbm_maildir_remove_files;
+-    libbalsa_mailbox_local_class->fileno       = lbm_maildir_fileno;
++    libbalsa_mailbox_local_class->filenum      = lbm_maildir_filenum;
+     libbalsa_mailbox_local_class->get_info     = lbm_maildir_get_info;
+ }
+ 
+@@ -388,7 +388,7 @@ static LibBalsaMessageFlag parse_filename(const gchar *subdir,
+ }
+ 
+ static void lbm_maildir_parse(LibBalsaMailboxMaildir * mdir,
+-                              const gchar *subdir, guint * fileno)
++                              const gchar *subdir, guint * filenum)
+ {
+     gchar *path;
+     GDir *dir;
+@@ -441,12 +441,12 @@ static void lbm_maildir_parse(LibBalsaMailboxMaildir * mdir,
+ 	    msg_info->key=key;
+ 	    msg_info->filename=g_strdup(filename);
+ 	    msg_info->local_info.flags = msg_info->orig_flags = flags;
+-	    msg_info->fileno = 0;
++	    msg_info->filenum = 0;
+ 	}
+ 	msg_info->subdir = subdir;
+-        if (!msg_info->fileno)
++        if (!msg_info->filenum)
+             /* First time we saw this key. */
+-	    msg_info->fileno = ++*fileno;
++	    msg_info->filenum = ++*filenum;
+     }
+     g_dir_close(dir);
+ }
+@@ -454,21 +454,21 @@ static void lbm_maildir_parse(LibBalsaMailboxMaildir * mdir,
+ static void
+ lbm_maildir_parse_subdirs(LibBalsaMailboxMaildir * mdir)
+ {
+-    guint msgno, fileno = 0;
++    guint msgno, filenum = 0;
+ 
+     for (msgno = mdir->msgno_2_msg_info->len; msgno > 0; --msgno) {
+         struct message_info *msg_info =
+             message_info_from_msgno(mdir, msgno);
+-        msg_info->fileno = 0;
++        msg_info->filenum = 0;
+     }
+ 
+-    lbm_maildir_parse(mdir, "cur", &fileno);
++    lbm_maildir_parse(mdir, "cur", &filenum);
+     /* We parse "new" after "cur", so that any recent messages will have
+      * higher msgnos than any current messages. That ensures that the
+      * message tree saved by LibBalsaMailboxLocal is still valid, and
+      * that the new messages will be inserted correctly into the tree by
+      * libbalsa_mailbox_local_add_messages. */
+-    lbm_maildir_parse(mdir, "new", &fileno);
++    lbm_maildir_parse(mdir, "new", &filenum);
+ }
+ 
+ static gboolean
+@@ -817,7 +817,7 @@ libbalsa_mailbox_maildir_sync(LibBalsaMailbox * mailbox, gboolean expunge)
+     if (changes) {              /* Record mtime of dir. */
+         struct stat st;
+ 
+-        /* Reparse, to get the fileno entries right. */
++        /* Reparse, to get the filenum entries right. */
+         lbm_maildir_parse_subdirs(mdir);
+         mailbox->msg_tree_changed = TRUE;
+ 
+@@ -859,7 +859,7 @@ libbalsa_mailbox_maildir_fetch_message_structure(LibBalsaMailbox * mailbox,
+ }
+ 
+ static guint
+-lbm_maildir_fileno(LibBalsaMailboxLocal * local, guint msgno)
++lbm_maildir_filenum(LibBalsaMailboxLocal * local, guint msgno)
+ {
+     struct message_info *msg_info;
+ 
+@@ -869,7 +869,7 @@ lbm_maildir_fileno(LibBalsaMailboxLocal * local, guint msgno)
+     msg_info =
+         message_info_from_msgno((LibBalsaMailboxMaildir *) local, msgno);
+ 
+-    return msg_info->fileno;
++    return msg_info->filenum;
+ }
+ 
+ static LibBalsaMailboxLocalMessageInfo *
+diff --git a/libbalsa/mailbox_mbox.c b/libbalsa/mailbox_mbox.c
+index 5f3928c..d79c65a 100644
+--- a/libbalsa/mailbox_mbox.c
++++ b/libbalsa/mailbox_mbox.c
+@@ -1523,8 +1523,6 @@ libbalsa_mailbox_mbox_sync(LibBalsaMailbox * mailbox, gboolean expunge)
+ 
+ 	if (msg_info->status >= 0) {
+ 	    status_len = lbm_mbox_line_len(mbox, msg_info->status);
+-	    if (status_len < 0)
+-		break;
+ 	} else {
+             msg_info->status = msg_info->mime_version >= 0 ?
+ 		msg_info->mime_version :
+@@ -1535,8 +1533,6 @@ libbalsa_mailbox_mbox_sync(LibBalsaMailbox * mailbox, gboolean expunge)
+ 
+ 	if (msg_info->x_status >= 0) {
+ 	    x_status_len = lbm_mbox_line_len(mbox, msg_info->x_status);
+-	    if (x_status_len < 0)
+-		break;
+ 	} else {
+ 	    msg_info->x_status = msg_info->status;
+ 	    x_status_len = 0;
+diff --git a/libbalsa/mailbox_mh.c b/libbalsa/mailbox_mh.c
+index cfd3379..1d343e3 100644
+--- a/libbalsa/mailbox_mh.c
++++ b/libbalsa/mailbox_mh.c
+@@ -310,8 +310,10 @@ lbm_mh_get_info(LibBalsaMailboxLocal * local, guint msgno)
+ 
+     msg_info = lbm_mh_message_info_from_msgno(LIBBALSA_MAILBOX_MH(local),
+ 					      msgno);
++/* XXX always false
+     if (msg_info->local_info.flags == INVALID_FLAG)
+         msg_info->local_info.flags = msg_info->orig_flags;
++*/
+ 
+     return &msg_info->local_info;
+ }
+@@ -757,8 +759,10 @@ static void
+ lbm_mh_flag_line(struct message_info *msg_info, LibBalsaMessageFlag flag,
+ 		 struct line_info *li)
+ {
++/* XXX always false
+     if (msg_info->local_info.flags == INVALID_FLAG)
+ 	msg_info->local_info.flags = msg_info->orig_flags;
++*/
+     if (!(msg_info->local_info.flags & flag))
+ 	return;
+ 
+@@ -830,8 +834,10 @@ libbalsa_mailbox_mh_sync(LibBalsaMailbox * mailbox, gboolean expunge)
+     msgno = 1;
+     while (msgno <= mh->msgno_2_msg_info->len) {
+ 	msg_info = lbm_mh_message_info_from_msgno(mh, msgno);
++/* XXX always false
+ 	if (msg_info->local_info.flags == INVALID_FLAG)
+ 	    msg_info->local_info.flags = msg_info->orig_flags;
++*/
+ 	if (mailbox->state == LB_MAILBOX_STATE_CLOSING)
+ 	    msg_info->local_info.flags &= ~LIBBALSA_MESSAGE_FLAG_RECENT;
+ 
+diff --git a/libbalsa/misc.c b/libbalsa/misc.c
+index c69edb7..03ba0ca 100644
+--- a/libbalsa/misc.c
++++ b/libbalsa/misc.c
+@@ -31,10 +31,13 @@
+ #include <ctype.h>
+ #include <dirent.h>
+ #include <errno.h>
++#include <fcntl.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#if 0
+ #include <sys/file.h>
++#endif
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/utsname.h>
+diff --git a/src/ab-main.c b/src/ab-main.c
+index aeda6da..b22ec2f 100644
+--- a/src/ab-main.c
++++ b/src/ab-main.c
+@@ -17,6 +17,7 @@
+  * along with this program; if not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#undef GTK_DISABLE_DEPRECATED
+ #if defined(HAVE_CONFIG_H) && HAVE_CONFIG_H
+ # include "config.h"
+ #endif                          /* HAVE_CONFIG_H */
+diff --git a/src/main-window.c b/src/main-window.c
+index 1abb3f9..dbe0ecc 100644
+--- a/src/main-window.c
++++ b/src/main-window.c
+@@ -25,6 +25,7 @@
+  * more self-contained.  pb
+  */
+ 
++#undef GTK_DISABLE_DEPRECATED
+ #if defined(HAVE_CONFIG_H) && HAVE_CONFIG_H
+ # include "config.h"
+ #endif                          /* HAVE_CONFIG_H */
+diff --git a/src/main.c b/src/main.c
+index bf75108..0d54392 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -17,6 +17,7 @@
+  * along with this program; if not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#undef GTK_DISABLE_DEPRECATED
+ #if defined(HAVE_CONFIG_H) && HAVE_CONFIG_H
+ # include "config.h"
+ #endif                          /* HAVE_CONFIG_H */
+@@ -396,7 +397,7 @@ balsa_handle_automation_options() {
+ 
+        if (cmd_line_open_mailboxes)
+ 	   GNOME_Balsa_Application_openMailbox (app,
+-					       cmd_line_open_mailboxes,
++					       *cmd_line_open_mailboxes,
+ 					       &ev);
+ 
+        if (opt_compose_email || opt_attach_list) {
+diff --git a/src/toolbar-prefs.c b/src/toolbar-prefs.c
+index d35bc85..473cd2a 100644
+--- a/src/toolbar-prefs.c
++++ b/src/toolbar-prefs.c
+@@ -17,6 +17,7 @@
+  * along with this program; if not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#undef GTK_DISABLE_DEPRECATED
+ #if defined(HAVE_CONFIG_H) && HAVE_CONFIG_H
+ # include "config.h"
+ #endif                          /* HAVE_CONFIG_H */

@@ -36,7 +36,6 @@ SRCS=		\
 		imap-server.c			\
 		information.c			\
 		libbalsa-conf.c			\
-		libbalsa-marshal.c		\
 		libbalsa-vfs.c			\
 		libbalsa.c			\
 		macosx-helpers.c		\
@@ -62,11 +61,15 @@ SRCS=		\
 		source-viewer.c			\
 		url.c
 
+.PATH:		${.CURDIR}
+SRCS+=		libbalsa-marshal.c
+
 WARNFLAGS=	-Wall -Werror -Wsign-compare -Wpointer-arith -Wnested-externs \
 		-Wchar-subscripts -Wuninitialized -Wmissing-prototypes \
 		-Wreturn-type -Wdeclaration-after-statement
 
 CFLAGS+=	\
+		-I${.CURDIR}					\
 		-I${.CURDIR}/..					\
 		-I${BALSA_DISTDIR}				\
 		-I${BALSA_DISTDIR}/libbalsa			\

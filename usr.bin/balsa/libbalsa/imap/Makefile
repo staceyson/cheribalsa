@@ -18,17 +18,20 @@ SRCS=		\
 		imap-handle.c		\
 		imap_search.c		\
 		imap-tls.c		\
-		libimap-marshal.c	\
 		md5-utils.c		\
 		pop3.c			\
 		siobuf.c		\
 		util.c
+
+.PATH:		${.CURDIR}
+SRCS+=		libimap-marshal.c
 
 WARNFLAGS=	-Wall -Werror -Wsign-compare -Wpointer-arith -Wnested-externs \
 		-Wchar-subscripts -Wuninitialized -Wmissing-prototypes \
 		-Wreturn-type -Wdeclaration-after-statement
 
 CFLAGS+=	\
+		-I${.CURDIR}					\
 		-I${.CURDIR}/..					\
 		-I${.CURDIR}/../..				\
 		-I${BALSA_DISTDIR}				\
